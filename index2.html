@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="platonic.css">
+
+
+  <div class="flex-container" style="background-color:white">
+<div>
+	
+		<svg id="dodecahedron">
+			<rect width="100%" height="100%" fill="white"></rect>
+		</svg>
+		 
+</div> 
+    </div>
+  
+
+<script src="d3.v4.min.js"></script>
+<script src="d3.geoPolyhedron.js"></script>
+
+<script>
+var width = 400, height = 400;
+var polyhedron = d3.set(['icosahedron', 'dodecahedron', 'octahedron', 'hexahedron', 'tetrahedron']);
+var isTransparent = [false, false, false, false, false];
+
+var velocity = [.025, .025],
+    t0 = Date.now();
+
+var projection = d3.geoOrthographic()
+    .scale(height / 2 - 6)
+// translate the origin of the map to [0,0] as a start, not to the now meaningless default of [480,250]
+	.translate([width/2, height / 2]);
+
+var geoGenerator = d3.geoPath()
+  .projection(projection);
+  
+ var svg = [];
+ var rect = [];
+ var faceGroup = [], labelGroup = [];
+ var face = [], label = [];
+ var ddata = ["Css","Java","Python","HTML","PHP","Javascript","Hadoop","SQL","Photoshop","DBMS","Algo","shell","Linux"];
+ 
+for (i = 0; i < polyhedron.size(); i++) 
+{
+	var p = polyhedron.values()[i];
+	
+	svg[i] = d3.select('#'+ p); //.append('svg')
+		//.attr("width", width)
+		//.attr("height", height);
+	//rect[i] = svg[i].append("rect")
+		//.attr("width", "100%")
+		//.attr("height", "100%");	
+	faceGroup[i] = svg[i].append("g");
+	labelGroup[i] = svg[i].append("g");
+	
+
+    // Add the triangular face
+	face[i] = faceGroup[i].selectAll(".face")
+		.data(d3.geoPolyhedron[p])
+		.enter().append("path")
+			.attr("class", "face");
+	// ... and label each face
+	label[i] = labelGroup[i].selectAll(".label")
+		.data(d3.geoPolyhedron[p])
+		.enter().append("text")
+			.attr("class", "label")	
+      .style("color","#08fdd8")
+			.text(function(d, i){ 
+    
+    return ddata[i]; });	
+}	
+
+d3.timer(function() {
+    var time = Date.now() - t0;
+    projection.rotate([time * velocity[0], time * velocity[1]]);
+
+	for (i = 0; i < polyhedron.size(); i++) 
+	{
+		face[i]
+			.each(function(d) { d.polygon = d.map(projection); })
+			.style("display", function(d) { return d3.polygonArea(d.polygon) > 0 ? null : (isTransparent[i] ? "none" : null); })
+			.attr("d", function(d) { return 'M' + d.polygon.join('L') + 'Z'; });
+
+		label[i]
+			.attr("x", function(d){ return d3.polygonCentroid(d.polygon)[0];})
+			.attr("y", function(d){ return d3.polygonCentroid(d.polygon)[1];})
+			.style("display", function(d) { return d3.polygonArea(d.polygon) > 0 ? null : (isTransparent[i] ? "none" : null); });
+	}
+
+})
+	
+function DoItTransparent(i) { isTransparent[i] = !isTransparent[i];}
+
+</script>
